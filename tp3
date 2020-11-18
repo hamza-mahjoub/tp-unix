@@ -1,0 +1,86 @@
+/***************ADD *******************/
+if [[ $# == 0 ]] || [[ $# == 1 ]]
+then
+	echo "you have to give at least 2 arguments"
+else
+	somme=0
+	while (( $# > 0 ))
+	do
+		if ! [[ "$1" =~ ^[0-9]+$ ]]
+		then
+			echo "$1 is not a number"
+			
+		else
+			somme=$(($somme+$1))
+		fi
+		shift 1 
+	done
+	echo $somme
+fi
+/********************* checkgroup ************************/
+if ! [[ $# = 2 ]]
+then
+	echo "2 arguments needed "
+else
+	x=`cat /etc/passwd | egrep -w $1 | cut -d: -f4`
+	y=`cat /etc/passwd | egrep -w $2 | cut -d: -f4`
+	if [[ $x = "" ]] 
+	then
+		echo "$1 dosn't exist" 
+	elif [[ $y = "" ]]
+	then
+		echo "$2 dosn't exist"
+	elif [[ $x = $y ]]
+	then
+		echo "same group" 
+	else
+		echo "not the same group"
+	fi 
+fi
+/************************ checkshell ***************************/
+if ! [[ $# = 1 ]]
+then
+	echo "one argument needed"
+else
+	shell="/bin/$1"
+	shell1="/sbin/$1"
+	IFS=":"
+	while read l p u g c h s
+	do
+		if [[ $s = $shell ]] || [[ $s = $shell1 ]]
+		then
+			echo "$l  "
+		fi
+	done < /etc/passwd
+fi 
+/************************** checkpass **************************/
+if  ! [[ $# = 1 ]]
+then
+	echo "One Argument needed" 
+else
+	y=`sudo cat /etc/passwd | egrep -w $1 | cut -d: -f1`
+	x=`sudo cat /etc/shadow | egrep -w $1 | cut -d: -f2`
+	if [[ $y = "" ]]
+	then
+		echo "$1 dosn't exist"
+	else
+		if [[ $x = "" ]]
+		then
+			echo " no password" 
+		else
+			echo "protected"
+		fi
+	fi
+fi
+/***************************** lsfils *****************************/
+if ! [[ $# = 1 ]]
+then
+	echo " 1 argument needed "
+else 
+	if [[ $1 =~ ^[0-9]+$ ]]
+	then
+		ps -ef | tr -s " " ":" | egrep "(.*:)$1:.*" | cut -d: -f 2,11
+	else
+		echo "$1 is not a valide ppid"
+	fi
+fi
