@@ -1,0 +1,471 @@
+while (( 1 ))
+do
+echo " "
+echo "------------------------------"
+echo "------------------------------"
+echo "Administration de la machine" 
+echo ""
+echo "1-  Gestion des modules"
+echo "2-  Gestion de l'arret et du demarrage" 
+echo "3-  Gestion comptes utilisateurs et des groupes"
+echo "4-  Gestion des process"
+echo "99- Quitter" 
+echo " "
+read -p "tapez votre choix : " choix
+
+case $choix in 
+	1) 
+	   while (( 1 )) 
+	   do 
+           echo " "
+	   echo "-------------------------------------------"
+	   echo "Gestion des module"
+	   echo " "
+	   echo "Choisir une option : "
+     	   echo " "
+	   echo " 1-  Afficher les modules."	
+	   echo " 2-  Inserer un module. "
+	   echo " 3-  Effacer un module. "
+ 	   echo " 4-  Afficher les infos sur un module."
+	   echo " 5-  revenir au menu principal"
+	   echo " 99- Quitter application"	
+
+	   read -p  "Tapez votre choix : " choix
+	
+	   case $choix in 
+		1) lsmod | tail -n +2 |cut -d" " -f 1 | cat -n 
+				;;
+		2) read -p "nom ou Num du module : " module;
+		   path=`cat Modules.txt | grep -w $module | cut -d: -f2`;
+		   sed "/^$module:.*/d" < Modules.txt;
+		   cat Modules.txt | egrep -v "^$module:" |tee Modules.txt;
+		   sudo insmod $path;
+ 				;;
+	        3) read -p "nom ou Num du module : " module;
+		   module_name=`lsmod | tail -n +2 |cut -d" " -f 1 | cat -n | egrep -w 	$module | tr -s "[:blank:]" " " | cut -d " " -f 3 `;
+	path=`modinfo $module_name | head -n 1 | tr -d " " | cut -d: -f2`;
+		  echo $module_name:$path >> Modules.txt;
+		  sudo rmmod $module_name;
+				;;
+	        4) read -p "Nom ou Num du module : " module;
+                   lsmod | tail -n +2 |cut -d" " -f 1 | cat -n | egrep -w $module | tr -s "[:blank:]" " " | cut -d " " -f 3 | xargs modinfo  ;
+				;;
+		5) break
+				;;
+	       99) break 2 
+				;;
+	   esac		
+	 done
+			;;
+	2) while (( 1 ))
+           do
+           echo " "
+	   echo "----------------------------------------------"
+	   echo "Gestion de l'arret et du demarrage"
+	   echo " "       
+	   echo " 1-  lister les applications d'arret de demarrage"
+	   echo " 2-  afficher le niveau actuel d'execution"
+	   echo " 3-  changer le niveau d'execution"
+	   echo " 4-  Arreter la machine "
+	   echo " 5-  redemarrer la machine"
+	   echo " 6-  revenir au menu precedant"
+	   echo " 99- Quitter application "
+
+	   read	 -p "tapez votre choix : " choix
+
+	   case $choix in
+		1) ls /etc/init.d
+			;;
+		2) who -r
+			;;
+		3) read -p "Donner le nouveau niveau d'execution : " runlevel
+		   init $runlevel
+			;;
+		4) init 0
+			;;
+		5) init 6 
+			;;
+		6) break
+			;;
+		99) break 2
+			;;
+	   esac
+           done
+			;;
+	3) 
+	   #---------------------Functions---------------------
+	   function Scondition (){
+        	if [[ $4 = ":" ]]
+        	then
+                	if [[ $6 = ":" ]]
+                	then
+                        	sudo useradd -u $2 -g $3 -s $5  $1
+                	else
+                        	sudo useradd -u $2 -g $3 -s $5 -c $6  $1
+			fi
+	 	else
+			hd=/home/$4
+                	if [[ $6 = ":" ]]
+                	then
+                	        sudo useradd -u $2 -g $3 -s $5 -d $hd $1
+                	else
+                	        sudo useradd -u $2 -g $3 -s $5 -c $6 -d $hd $1
+                	fi
+        	fi
+	  }
+
+	  function S1condition
+	  {
+        	if [[ $3 = ":" ]]
+        	then
+        	        if [[ $5 = ":" ]]
+        	        then
+        	                sudo useradd -u $2 -s $4  $1
+        	        else
+        	                sudo useradd -u $2 -s $4 -c $5  $1
+        	        fi
+        	else
+        	        hd=/home/$3
+       	                if [[ $5 = ":" ]]
+            	    then
+            	            sudo useradd -u $2 -s $4 -d $hd $1
+            	    else
+            	            sudo useradd -u $2 -s $4 -c $5 -d $hd $1
+            	    fi
+		fi
+	}
+
+	function S2condition
+	{
+	        if [[ $3 = ":" ]]
+	        then
+	                if [[ $5 = ":" ]]
+	                then
+	                        sudo useradd -g $2 -s $4  $1
+	                else
+	                        sudo useradd -g $2 -s $4 -c $5 $1
+	                fi
+	        else
+	                hd=/home/$3
+	                if [[ $5 = ":" ]]
+	                then
+	                       sudo  useradd -g $2 -s $4 -d $hd $1
+	                else
+	                       sudo  useradd -g $2 -s $4 -c $5 -d $hd $1
+	                fi
+		fi
+	}
+
+	function S3condition
+	{	
+	        if [[ $2 = ":" ]]
+	        then
+	                if [[ $4 = ":" ]] 
+	                then
+	                       sudo useradd -s $3 $1
+	                else
+	                       sudo useradd -s $3 -c $4   $1
+			fi
+	        else
+	                hd=/home/$2
+	                if [[ $4 = ":" ]] 
+	                then
+	                        sudo useradd -s $3 -d $hd $1
+	                else
+	                        sudo useradd -s $3 -c $4 -d $hd $1
+	                fi
+		fi
+	}
+
+#-------------------Code----------------------------------
+while (( 1 ))
+do
+echo ""
+echo "------------------Administration des comptes----------------------------"
+echo "1-  administration des comptes utilisateurs"
+echo "2-  administration des groupes"
+echo "3-  revenir au menu precedant"
+echo "99- Quitter application"
+
+echo " "
+read -p "tapez votre choix :  " choice
+
+case $choice in 
+     1) while (( 1 ))
+	do
+ 	echo "------------------------------------------------------------"
+	echo "Gestion des comptes des utilisateurs"
+	echo " " 
+	echo "1-  lister des comptes utilisateurs"
+	echo "2-  chercher un utilisateur"
+	echo "3-  créer un compte utilisateur"
+	echo "4-  se connecter a votre compte"
+	echo "5-  effacer un utilisateur"
+	echo "6-  revenir au menu précédent"
+        echo "99- Quitter application" 
+	echo " "
+	read -p "tapez votre choix : "  val
+	case $val in 
+	     1) echo " la liste : "	  
+		IFS=":"
+		while read login passwd uid gpid cmt HomeDir shell
+		do
+			echo "$uid : $login"
+		done < /etc/passwd
+			;;
+	     2) read -p "tapez le nom ou UID du l'utilisateur : " arg 		
+		IFS=":"
+		test=false
+                while read login passwd uid gpid cmt HomeDir shell
+		do
+			if [[ $arg = $uid ]] || [[ $arg = $login ]]
+       	        	then
+				echo "User ID        : $uid "
+				echo "-------------------------------"
+				echo "login          : $login " 
+				echo "-------------------------------"
+				echo "Group ID       : $gpid " 
+				echo "-------------------------------"
+				echo "Comment        : $cmt " 
+				echo "-------------------------------"
+                                echo "Home Directory : $HomeDir "
+				echo "-------------------------------"
+				echo "shell          : $shell " 
+				echo "-------------------------------"
+				test = true
+			fi
+		done < /etc/passwd
+		if [[ $test = "false" ]]
+                then 
+			 echo "user inexistant(vérifier id ou login)"
+                 fi
+		#on peut egalement utilisé grep et cut 
+			;;
+	     3) echo "Création d'un compte utilisateur : "
+		read -p "tapez login : " login
+		read -p "tapez UID (sinon par défaut)  : " uid
+		read -p "tapez GID (sinon par défaut) : " grp
+		read -p "tapez home directory (sinon par défaut) : " hd
+		read -p "tapez shell (sh ou bash) : " shell
+		read -p "ajoutez commentaire : " cmt
+		if [[ $hd =~ ^[[:blank:]]+$ ]] || [[ -z $hd ]]
+		then
+			hd="$hd:"
+		fi
+		if [[ $cmt =~ ^[[:blank:]]+$ ]] || [[ -z $cmt ]]
+		then
+			cmt="$cmt:"
+		fi
+		if [[ $login =~ ^[[:blank:]]+$ ]] || [[ -z $login ]]
+		then
+        		echo "le login est vide !!!"
+		elif ! [[ $shell = "bash" ]] && ! [[ $shell = sh ]] 
+		then 
+			echo "$shell n'est pas un shell existant"
+		elif ! [[ $uid =~ ^[[:blank:]]+$ ]] && ! [[ -z $uid ]]
+		then
+		 	 vshell=/bin/$shell
+			 if ! [[ $grp =~ ^[[:blank:]]+$ ]] && ! [[ -z $grp ]]
+			 then
+				Scondition $login $uid $grp $hd $vshell $cmt
+				sudo passwd $login
+		 	 else
+				S1condition $login $uid $hd $vshell $cmt
+				sudo passwd $login
+			 fi
+		elif ! [[ $grp =~ ^[[:blank:]]+$ ]] && ! [[ -z $grp ]]
+		then
+			 vshell=/bin/$shell
+			 S2condition $login $grp $hd $vshell $cmt
+			 sudo passwd $login
+		else
+			 vshell=/bin/$shell
+			 S3condition $login $hd $vshell $cmt
+			 sudo passwd $login
+		fi
+			;;
+	     4) read -p "nom du l'utilisateur : " nom
+		echo "connexion requise" 
+		su $nom
+			;;
+	     5) read -p "tapez l'utilisateur a effacé " nom
+		sudo userdel -r $nom
+			;;
+             6) break
+			;;
+	     99) break 3 
+			;;
+	esac
+	done
+			;;
+     2) while (( 1 ))
+	do
+        echo "------------------------------------------------------------"
+        echo "Gestion des groupes"
+        echo "1- lister les groupes"
+        echo "2- lister les utilisateurs d'un méme group"
+        echo "3- créer un groupe"
+	echo "4- lister tout les groupes auquel appartient un utilisateur"
+	echo "5- effacer un groupe "
+        echo "6- revenir au menu précédent"
+        echo "99- Quitter l'application "
+	
+	read -p "tapez votre choix :  " val1
+	case $val1 in 
+	     1) echo " Groupe ID    | Groupe Name"
+		IFS=":"
+		while read grpname pwd grpid
+		do
+			echo " $grpid    | $grpname "
+			echo "------------------------------"	
+		done < /etc/group
+			;;
+	     2)	read -p "id du groupe : " arg
+		IFS=":"
+		if  [[ $arg =~ ^[[:blank]].$ ]] || [[ -z $arg ]]
+		then
+        		echo " $arg n'est pas valide"
+		else
+			if [[ $arg =~ ^[0-9]+$ ]]
+			then
+                        echo "Users of the group $arg are : "
+                             while read login pwd uid gpi cmt homeDir shell
+                             do
+                                 if [[ "$arg" = $gpi ]] 
+                                 then
+                                        echo "$uid : $login"
+					echo "---------------------"
+                                 fi
+                             done < /etc/passwd
+             		else
+				echo "groupe id invalide !!!"	
+			fi
+                fi
+			;;
+	     3)	read -p "tapez le nom du nouveau group : " nom
+		sudo groupadd $nom
+	 		;;
+	     4) read -p "tapez le nom du l'utilisateur : " nom
+		id $nom
+			;;
+	     5)  read -p "tapez le nom du  group : " nom
+		 sudo groupdel $nom
+			;;
+	     6) break
+			;;
+	     99) break 3 
+			;;
+	esac
+	done
+ 		;;
+     3) break
+		;;
+     99) break 2
+		;;
+ esac
+done
+		;;
+	4) while (( 1 )) 
+	   do
+           echo " "
+           echo "---------------------------------------------"
+	   echo "Gestion des process" 
+	   echo " " 
+	   echo "1-  lister les process"
+	   echo "2-  afficher pid of a process "
+	   echo "3-  Afficher des informations supplémentaires sur un processus"
+	   echo "4-  lister les processus fils d'un process" 
+	   echo "5-  tuer un process"
+	   echo "6-  suspendre un process" 
+	   echo "7-  reprendre le fonctionnement d'un process" 
+	   echo "8-  revenir au menu precedant" 
+	   echo "99- Quitter"
+	   echo " " 
+	   read -p "Tapez votre choix : " choix
+	   case $choix in 
+		1) ps -ef | tr -s " " | cut -d" " -f 1,2,3 | tr " " ":"
+			;;
+		2) read -p "Tapez le nom de process : " n
+		   pidof $n
+			;;
+		3) read -p " tapez le pid : " pid
+		   ps -ef | tr -s " " ":" > arg
+		   IFS=":"
+		   test="false"
+		   while read uid pid1 ppid c stime tty time cmd
+		   do
+			if [[ $pid == $pid1 ]]
+			then
+				echo " "
+				echo "----------------------------"
+				echo "UID   : $uid"
+				echo "----------------------------"
+				echo "PID   : $pid"
+				echo "----------------------------"
+				echo "ppid  : $ppid"
+				echo "----------------------------"
+				echo "C     : $c"
+   				echo "----------------------------"
+				echo "stime : $stime"
+				echo "----------------------------"
+				echo "tty   : $tty"
+				echo "----------------------------"
+				echo "time  : $time"
+				echo "----------------------------"
+				echo "cmd   : $cmd"
+				echo "----------------------------"
+				echo " "
+				test="true"
+			fi
+			if [[ $test == "true" ]]
+			then
+				break
+			fi
+		   done < arg
+		   rm arg
+		  
+				;; 
+		4) read -p " tapez le pid du process : " pid
+		   if [[ $pid =~ ^[0-9]+$ ]]
+		        then
+		ps -ef | tr -s " " ":" | egrep "(.*:)$pid:.*" | cut -d: -f 2,11
+		   else
+			echo "$pid is not a valide ppid"
+		   fi
+				;;
+		5) read -p "tapez le pid du process : " pid
+		   if [[ $pid =~ ^[0-9]+$ ]]
+		   then
+			kill -9 $pid
+		   else
+			echo "$pid is not a valide pid"
+                   fi
+				;;
+  		6) read -p "tapez le pid du process : " pid
+                   if [[ $pid =~ ^[0-9]+$ ]]
+                   then
+                        kill -17 $pid 
+                   else 
+                        echo "$pid is not a valide ppid"
+                   fi
+				;;
+		7) read -p "tapez le pid du process : " pid
+                   if [[ $pid =~ ^[0-9]+$ ]]
+                   then
+                        kill -18 $pid
+                   else
+                        echo "$pid is not a valide ppid"
+                   fi
+				;;
+		8) break
+				;;
+
+	       99) break 2
+				;;
+	esac
+        done
+				;;
+   99) break
+			;;
+esac
+done
