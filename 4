@@ -1,0 +1,38 @@
+------------------------- arret demarrage ------------------------
+echo " arret et demarrage de la machine" 
+echo " 1- lister les applications d'arret de demarrage"
+echo " 2- afficher le niveau actuel d'execution"
+echo " 3- changer le niveau d'execution"
+echo " 4- Arreter la machine "
+echo " 5- redemarrer la machine"
+echo " 99- quit "
+
+read -p "tapez votre choix : " choix
+
+case $choix in
+	1) ls /etc/init.d
+		;;
+	2) who -r
+		;;
+	3) read -p "Donner le nouveau niveau d'execution : " runlevel
+	   init $runlevel
+		;;
+	4) init 0
+		;;
+	5) init 6 
+		;;
+	99) exit
+		;;
+esac
+
+--------------------------gestion process------------------------
+echo "gestion des process"
+echo "1-  Lister les process"
+echo "99- quitter "
+read -p "tapez votre choix : " choix
+case $choix in 
+	1) ps -ef
+		;;
+	99) exit
+		;;
+esac
