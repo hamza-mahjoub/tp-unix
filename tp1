@@ -1,0 +1,45 @@
+#! /bin/bash
+while true
+do 
+	echo "Choisir une option : ";
+	echo " 1-Afficher les modules.";	
+	echo " 2-Inserer un module. ";
+	echo " 3-Effacer un module. ";
+	echo " 4-Afficher les infos sur un module.";
+	echo " 5-Sortir.";
+
+	read -p  "Ton choix : " x;
+	
+	if   (( $x == 1 ))
+	then
+		lsmod | tail -n +2 |cut -d" " -f 1 | cat -n ;
+
+	elif (( $x == 2 ))
+	then 
+		read -p "nom ou Num du module : " module;
+		path=`cat Modules.txt | grep -w $module | cut -d: -f2`;
+		sed "/^$module:.*/d" < Modules.txt;
+		cat Modules.txt | egrep -v "^$module:" |tee Modules.txt;
+		sudo insmod $path;
+ 
+	elif (( $x == 3 ))
+	then 
+		read -p "nom ou Num du module : " module;
+		module_name=`lsmod | tail -n +2 |cut -d" " -f 1 | cat -n | egrep -w 	$module | tr -s "[:blank:]" " " | cut -d " " -f 3 `;
+		path=`modinfo $module_name | head -n 1 | tr -d " " | cut -d: -f2`;
+		echo $module_name:$path >> Modules.txt;
+		sudo rmmod $module_name;
+		
+		
+	elif (( $x == 4 ))
+	then 
+		read -p "Nom ou Num du module : " module;
+                lsmod | tail -n +2 |cut -d" " -f 1 | cat -n | egrep -w $module | tr -s "[:blank:]" " " | cut -d " " -f 3 | xargs modinfo  ;
+
+	elif (( $x == 5 ))
+	then 
+		break;
+	else 
+		echo "Choix invalide !!!!";
+	fi
+done
