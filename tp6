@@ -1,0 +1,78 @@
+while (( 1 ))
+do
+echo ""
+echo "---- Application de gestion de Cron ----"
+echo ""
+echo "Tapez Votre choix :  "
+echo "1 -Afficher les fichiers de Crontab"
+echo "2 -Rechercher un fichier "
+echo "3 -Ajouter un fichier a Crontab"
+echo "4 -afficher crontab d'un utilisateur"
+echo "5 -modifier crontab d'un utilisateur"
+echo "6 -suprrimer crontab d'un utilisateur"
+echo "7 -Effacer un fichier de Crontab"
+echo "8 -Effacer Crontab"
+echo "9 -Historique des fichiers"
+echo "99-Quitter"
+
+read -p "Votre Choix : " choix
+
+case $choix in
+        1) crontab -l
+                ;;
+        2) read -p "tapez le nom du fichier  : " fichier
+           crontab -l | grep "$fichier"
+                ;;
+        3) echo "---- Ajout d'un fichier ----"
+           echo ""
+           echo "par défaut sera tout les minutes "
+           read -p "tapez les minutes [0-59] : " m
+           read -p "tapez les heures [0-23] : " h
+           read -p "tapez jour du mois [1-31] : " d
+           read -p "tapez mois [1-12] : " mois
+           read -p "tapez jour [0-6] : " j
+           read -p "donner chemin de l'application a exécutée : " a
+           read -p "nom du l'utilisateur (optionel) : " nu
+           if [[ $a = "" ]]
+           then
+                echo "le chemin de l'application ne doit pas étre vide"
+           elif [[ $m = "" ]] && [[ $h = "" ]] && [[ $d = "" ]] && [[ $mois = "" ]] && [[ $j = "" ]]
+           then
+                echo "* * * * * $a" >> aux
+                echo "* * * * * $a" >> commands
+           else
+                echo "$m $h $d $mois $j $a" >> aux
+                echo "$m $h $d $mois $j $a" >> commands
+           fi
+
+           if [[ $nu = "" ]]
+           then
+                crontab  aux
+           else
+                sudo crontab -u $nu aux
+           fi
+           rm aux
+                ;;
+        4) read -p "tapez le nom d'utilisateur : " nu
+           sudo crontab -l -u $nu
+                ;;
+        5) read -p "tapez le nom d'utilisateur : " nu
+           sudo crontab -e -u $nu
+                ;;
+        6) read -p "tapez le nom d'utilisateur : " nu
+           sudo crontab -r -u $nu
+                ;;
+        7) read -p "tapez le chemin exacte du fichier a supprimé : " chemin
+           crontab -l | grep -v "$chemin" | crontab -
+                 ;;
+        8) crontab -ri
+                ;;
+        9) cat commands
+                ;;
+        99) break
+esac
+done
+                     
+
+                
+                                                        
